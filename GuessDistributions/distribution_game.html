@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Distribution Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .dist-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            background: #fafafa;
+            transition: transform 0.2s;
+        }
+        
+        .dist-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .dist-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #667eea;
+            text-align: center;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 250px;
+            border-radius: 5px;
+        }
+        
+        .reveal-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .reveal-btn:hover {
+            background: #5568d3;
+        }
+        
+        .answers {
+            display: none;
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .answers.show {
+            display: block;
+        }
+        
+        .answer-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .answer-title {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Guess the Distribution Game 🎲</h1>
+        
+        <div class="instructions">
+            <strong>Instructions:</strong> Look at each histogram below and try to identify which probability distribution it represents. Consider the shape, symmetry, and range. Common options: Normal, Exponential, Uniform, Binomial, Poisson, Beta, Chi-squared, etc.
+        </div>
+        
+        <div class="grid">
+            <div class="dist-card">
+                <div class="dist-title">Distribution #1</div>
+                <canvas id="dist1"></canvas>
+            </div>
+            
+            <div class="dist-card">
+                <div class="dist-title">Distribution #2</div>
+                <canvas id="dist2"></canvas>
+            </div>
+            
+            <div class="dist-card">
+                <div class="dist-title">Distribution #3</div>
+                <canvas id="dist3"></canvas>
+            </div>
+            
+            <div class="dist-card">
+                <div class="dist-title">Distribution #4</div>
+                <canvas id="dist4"></canvas>
+            </div>
+            
+            <div class="dist-card">
+                <div class="dist-title">Distribution #5</div>
+                <canvas id="dist5"></canvas>
+            </div>
+            
+            <div class="dist-card">
+                <div class="dist-title">Distribution #6</div>
+                <canvas id="dist6"></canvas>
+            </div>
+        </div>
+        
+        <button class="reveal-btn" onclick="revealAnswers()">Reveal Answers</button>
+        
+        <div class="answers" id="answers">
+            <h2 style="text-align: center; color: #2e7d32;">Answer Key</h2>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #1: Normal (Gaussian)</div>
+                Parameters: mean = 50, sd = 10<br>
+                <em>Hint: Bell-shaped, symmetric around the mean</em>
+            </div>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #2: Exponential</div>
+                Parameters: rate = 0.5<br>
+                <em>Hint: Models waiting times, always positive with long right tail</em>
+            </div>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #3: Uniform</div>
+                Parameters: min = 0, max = 100<br>
+                <em>Hint: All values equally likely - flat distribution</em>
+            </div>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #4: Binomial</div>
+                Parameters: size = 30, prob = 0.2<br>
+                <em>Hint: Discrete distribution, counts successes in fixed trials, left-skewed with low probability</em>
+            </div>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #5: Poisson</div>
+                Parameters: lambda = 3<br>
+                <em>Hint: Models count data, clearly right-skewed with discrete values</em>
+            </div>
+            
+            <div class="answer-item">
+                <div class="answer-title">Distribution #6: Beta</div>
+                Parameters: shape1 = 0.5, shape2 = 0.5<br>
+                <em>Hint: U-shaped, bounded between 0 and 1</em>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Helper function to draw histogram
+        function drawHistogram(canvasId, data, bins = 30) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            
+            // Calculate histogram
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const binWidth = (max - min) / bins;
+            const freq = new Array(bins).fill(0);
+            
+            data.forEach(val => {
+                let binIndex = Math.floor((val - min) / binWidth);
+                if (binIndex === bins) binIndex = bins - 1;
+                freq[binIndex]++;
+            });
+            
+            const maxFreq = Math.max(...freq);
+            
+            // Draw histogram
+            ctx.fillStyle = '#4682b4';
+            ctx.strokeStyle = '#2c5282';
+            ctx.lineWidth = 1;
+            
+            const barWidth = width / bins;
+            const padding = 40;
+            
+            freq.forEach((count, i) => {
+                const barHeight = (count / maxFreq) * (height - padding);
+                const x = i * barWidth;
+                const y = height - barHeight - 20;
+                
+                ctx.fillRect(x, y, barWidth - 1, barHeight);
+                ctx.strokeRect(x, y, barWidth - 1, barHeight);
+            });
+        }
+        
+        // Generate distributions
+        function normalRandom(mean, sd) {
+            let u1 = Math.random();
+            let u2 = Math.random();
+            let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            return z * sd + mean;
+        }
+        
+        function exponentialRandom(rate) {
+            return -Math.log(1 - Math.random()) / rate;
+        }
+        
+        function uniformRandom(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+        
+        function binomialRandom(n, p) {
+            let successes = 0;
+            for (let i = 0; i < n; i++) {
+                if (Math.random() < p) successes++;
+            }
+            return successes;
+        }
+        
+        function poissonRandom(lambda) {
+            let L = Math.exp(-lambda);
+            let k = 0;
+            let p = 1;
+            do {
+                k++;
+                p *= Math.random();
+            } while (p > L);
+            return k - 1;
+        }
+        
+        function betaRandom(a, b) {
+            // Using rejection sampling (simplified)
+            let x, y;
+            do {
+                x = Math.random();
+                y = Math.random();
+            } while (Math.pow(x, a-1) * Math.pow(1-x, b-1) < y);
+            return x;
+        }
+        
+        // Generate data - using more samples and more extreme parameters
+        const n = 5000;
+        const dist1 = Array.from({length: n}, () => normalRandom(50, 10));
+        const dist2 = Array.from({length: n}, () => exponentialRandom(0.5));
+        const dist3 = Array.from({length: n}, () => uniformRandom(0, 100));
+        const dist4 = Array.from({length: n}, () => binomialRandom(30, 0.2));
+        const dist5 = Array.from({length: n}, () => poissonRandom(3));
+        const dist6 = Array.from({length: n}, () => betaRandom(0.5, 0.5));
+        
+        // Draw all histograms
+        drawHistogram('dist1', dist1);
+        drawHistogram('dist2', dist2);
+        drawHistogram('dist3', dist3);
+        drawHistogram('dist4', dist4);
+        drawHistogram('dist5', dist5);
+        drawHistogram('dist6', dist6);
+        
+        function revealAnswers() {
+            document.getElementById('answers').classList.add('show');
+        }
+    </script>
+</body>
+</html>
